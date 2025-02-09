@@ -4,10 +4,14 @@ on: [ push, pull_request ]
 
 jobs:
   build-linux:
-    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        dynarch: [ 0, 1 ]
+        include:
+          - { name: linux, os: ubuntu-20.04, dynarch: 0 }
+          - { name: linux, os: ubuntu-20.04, dynarch: 1 }
+          - { name: linux-arm64, os: ubuntu-22.04-arm, dynarch: 0 }
+          - { name: linux-arm64, os: ubuntu-22.04-arm, dynarch: 1 }
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -31,7 +35,7 @@ jobs:
           ref: vosk-android
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: vosk-api-linux-${{ matrix.dynarch }}
+          key: vosk-api-${{ matrix.name }}-${{ matrix.dynarch }}
       - name: Prepare Environment
         run: |
           echo "GIT_REVISION=$(git describe --tags --always)" >> $GITHUB_ENV
@@ -125,13 +129,13 @@ jobs:
         if: ${{ matrix.dynarch == '0' }}
         uses: actions/upload-artifact@v4
         with:
-          name: vosk-api-linux-${{ env.GIT_REVISION }}
+          name: vosk-api-${{ matrix.name }}-${{ env.GIT_REVISION }}
           path: src/libvosk.so
       - name: Upload vosk-api-dynamic-arch
         if: ${{ matrix.dynarch == '1' }}
         uses: actions/upload-artifact@v4
         with:
-          name: vosk-api-linux-dynamic-arch-${{ env.GIT_REVISION }}
+          name: vosk-api-${{ matrix.name }}-dynamic-arch-${{ env.GIT_REVISION }}
           path: src/libvosk.so
 
   build-mingw:
